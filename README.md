@@ -24,7 +24,7 @@ ResHelp Tools is a collection of Python-based utilities designed to assist resea
 
 ## Requirements
 
-- Python 3.x
+- Python 3.8
 - Requests library (install via `pip install requests`)
 
 ## Usage
@@ -32,7 +32,7 @@ ResHelp Tools is a collection of Python-based utilities designed to assist resea
 1. Clone the repository to your local machine:
 
     ```bash
-    git clone https://github.com/your-username/reshelp-tools.git
+    git clone https://github.com/manavc-13/ResHelp-Tools.git
     ```
 
 2. Navigate to the project directory:
@@ -57,12 +57,6 @@ ResHelp Tools is a collection of Python-based utilities designed to assist resea
 
 ## Contributors
 
-- Manav Choudhary (@manavchoudhary)
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
+- Manav Choudhary (@manavc-13)
 
 ---
-
-Feel free to customize the README according to your project specifics, such as adding installation instructions, usage examples, or additional features. You can also include screenshots or additional visual elements to enhance the documentation.
