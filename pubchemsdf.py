@@ -32,11 +32,8 @@ def download_sdf(pubchem_id, save_folder):
     else:
         print(f"Failed to download SDF file for CID {pubchem_id}.")
 
-def search_and_download(names_file, save_folder):
-    with open(names_file, 'r') as file:
-        chemical_names = file.readlines()
-    
-    for name in chemical_names:
+def search_and_download(names, save_folder):
+    for name in names:
         name = name.strip()  # Remove leading/trailing whitespace and newline characters
         url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{name}/cids/JSON?name_type=word"
         response = requests.get(url)
@@ -50,11 +47,40 @@ def search_and_download(names_file, save_folder):
         else:
             print(f"Failed to search for chemical {name}.")
 
+def process_option(option):
+    if option == '1':
+        save_folder = input("Enter the path to the folder where you want to save SDF files: ")
+        chemicals = []
+        print("Enter names of chemicals (press Enter twice to finish): ")
+        while True:
+            chemical = input().strip()
+            if not chemical:
+                break
+            chemicals.append(chemical)
+        search_and_download(chemicals, save_folder)
+        download_more = input("Do you want to download more files? (Y/N): ").strip().lower()
+        if download_more == 'y':
+            return '1'
+    elif option == '2':
+        names_file = input("Enter the path to the text file containing chemical names: ")
+        save_folder = input("Enter the path to the folder where you want to save SDF files: ")
+        with open(names_file, 'r') as file:
+            chemicals = [line.strip() for line in file.readlines()]
+        search_and_download(chemicals, save_folder)
+        download_more = input("Do you want to download more files? (Y/N): ").strip().lower()
+        if download_more == 'y':
+            return '2'
+    else:
+        print("Invalid option. Please select a valid option.")
+    return None
+
 if __name__ == "__main__":
     display_intro()
-    names_file = input("Enter the path to the text file containing chemical names: ")
-    save_folder = input("Enter the path to the folder where you want to save SDF files: ")
-    search_and_download(names_file, save_folder)
-
-
-    
+    print("Options:")
+    print("1. Enter names of chemicals")
+    print("2. Upload .txt file with chemical names")
+    option = input("Enter option number: ")
+    while option:
+        option = process_option(option)
+        if option is None:
+            break

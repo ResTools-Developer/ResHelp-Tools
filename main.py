@@ -33,7 +33,7 @@ def ask_for_tool_choice():
     while True:
         choice = input("Enter the serial number of the tool you want to use: ")
         if choice.isdigit() and int(choice) == 1:
-            os.system("python3 test.py")
+            os.system("python3 pubmedsdf.py")
             break
         else:
             print("Invalid choice. Please enter a valid serial number.")
