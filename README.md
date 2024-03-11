@@ -1,6 +1,6 @@
 # ResHelp Tools
 
-![ResHelp Tools Logo](logo.jpeg)
+![ResHelp Tools Logo](logo.png)
 
 ## Overview
 
