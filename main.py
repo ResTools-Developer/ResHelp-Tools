@@ -27,16 +27,25 @@ def display_intro():
 def display_options():
     print("Available Tools:")
     print("1. SDF 3D Conformer Downloader")
+    print("2. Add Hydrogen")
     print("\n")
 
 def ask_for_tool_choice():
     while True:
         choice = input("Enter the serial number of the tool you want to use: ")
-        if choice.isdigit() and int(choice) == 1:
-            os.system("python3 pubmedsdf.py")
-            break
+        if choice.isdigit():
+            choice = int(choice)
+            if choice == 1:
+                os.system("python3 pubchemsdf.py")
+                break
+            elif choice == 2:
+                os.system("python3 addh.py")
+                break
+            else:
+                print("Invalid choice. Please enter a valid serial number.")
         else:
             print("Invalid choice. Please enter a valid serial number.")
+
 
 if __name__ == "__main__":
     display_intro()
