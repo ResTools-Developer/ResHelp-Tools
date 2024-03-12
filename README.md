@@ -22,6 +22,13 @@ ResHelp Tools is a collection of Python-based utilities designed to assist resea
   - Upload of a .txt file containing chemical names.
 - Downloads 3D conformer SDF files from PubChem for the specified chemicals.
 
+### Adding Hydrogen to Molecules tool
+
+- Asks user for location of SDF files
+- In the software PyMOL, adds hydrogen to each molecule and saves the file in .pdb format
+- Command used in PyMOL : h_add
+- Location of PyMOL should be : C:\ProgramData\pymol\PyMOLWin.exe
+
 ## Requirements
 
 - Python 3.8
@@ -44,7 +51,7 @@ ResHelp Tools is a collection of Python-based utilities designed to assist resea
 3. Run the main tool:
 
     ```bash
-    python main.py
+    python3.8 main.py
     ```
 
 4. Follow the on-screen instructions to choose the tool and proceed with the desired functionality.
