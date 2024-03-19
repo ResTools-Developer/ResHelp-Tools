@@ -28,6 +28,9 @@ def display_options():
     print("Available Tools:")
     print("1. SDF 3D Conformer Downloader")
     print("2. Add Hydrogen")
+    print("3. Docking Tools")
+    print("4. IMPATT Database")
+    print("5. Exit")
     print("\n")
 
 def ask_for_tool_choice():
@@ -41,6 +44,15 @@ def ask_for_tool_choice():
             elif choice == 2:
                 os.system("python3 addh.py")
                 break
+            elif choice == 3:
+                os.system("python3 docking.py")
+                break
+            elif choice == 4:
+                os.system("python3 IMPPAT.py")
+                break
+            elif choice == 5:
+                print("Exiting...")
+                sys.exit()
             else:
                 print("Invalid choice. Please enter a valid serial number.")
         else:
