@@ -2,7 +2,6 @@ import os
 import subprocess
 import glob
 import sys
-from colorama import init, Fore
 
 def print_purple(text):
     print("\033[95m {}\033[00m" .format(text))
@@ -85,7 +84,7 @@ def start_docking(directory):
     response = input("Do you want to start the docking process? (Y/N): ").strip().upper()
     if response == 'Y':
         os.chdir(directory)
-        subprocess.run(["perl", "Vina_linux.pl"])
+        subprocess.run(["perl", "vina_modified.pl"])
         os.makedirs("Log", exist_ok=True)
         os.makedirs("Output", exist_ok=True)
         subprocess.run("mv *.log Log", shell=True)
@@ -100,8 +99,16 @@ def split_output_files(directory):
             subprocess.run(["vina_split", "--input", output_file])
         os.makedirs("01_Docking_Pose", exist_ok=True)
         os.makedirs("Other_Docking_Pose", exist_ok=True)
+        os.makedirs("Input", exist_ok=True)
+        os.makedirs("PDBQT", exist_ok=True)
         subprocess.run(["mv *_ligand_01.pdbqt 01_Docking_Pose"], shell=True)
         subprocess.run(["mv *_ligand_[0-9][0-9].pdbqt Other_Docking_Pose"], shell=True)
+        subprocess.run(["mv *.sdf Input && mv protein.pdbqt Input"], shell=True)
+        subprocess.run(["mv 01_Docking_Pose Output"], shell=True)
+        subprocess.run(["mv Other_Docking_Pose Output"], shell=True)
+        subprocess.run(["mv Log Output"], shell=True)
+        subprocess.run(["mv *.pdbqt PDBQT"], shell=True)
+        subprocess.run(["mv PDBQT Output"], shell=True)
    
 def display_options():
     print("Available Actions:")
