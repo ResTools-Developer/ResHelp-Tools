@@ -26,10 +26,10 @@ def display_intro():
 
 def display_options():
     print("Available Tools:")
-    print("1. SDF 3D Conformer Downloader")
-    print("2. Add Hydrogen")
-    print("3. Docking Tools")
-    print("4. IMPATT Database")
+    print("1. PubChem Database")
+    print("2. IMPPAT Databse")
+    print("3. Add Hydrogen Tool")
+    print("4. Docking Tools")
     print("5. Exit")
     print("\n")
 
@@ -39,16 +39,16 @@ def ask_for_tool_choice():
         if choice.isdigit():
             choice = int(choice)
             if choice == 1:
-                os.system("python3 pubchemsdf.py")
+                os.system("python3 pubchem.py")
                 break
             elif choice == 2:
-                os.system("python3 addh.py")
+                os.system("python3 IMPPAT.py")
                 break
             elif choice == 3:
-                os.system("python3 docking.py")
+                os.system("python3 addh.py")
                 break
             elif choice == 4:
-                os.system("python3 IMPPAT.py")
+                os.system("python3 docking.py")
                 break
             elif choice == 5:
                 print("Exiting...")
