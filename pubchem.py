@@ -1,6 +1,8 @@
 import os
 import requests
 from tqdm import tqdm
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 def print_green(text):
     print("\033[92m {}\033[00m" .format(text))
@@ -29,34 +31,48 @@ def download_file(url, save_folder, filename):
     response = requests.get(url, stream=True)
     if response.status_code == 200:
         with open(os.path.join(save_folder, filename), 'wb') as f:
-            total_length = int(response.headers.get('content-length'))
-            with tqdm(total=total_length, desc=filename, unit='B', unit_scale=True) as pbar:
-                for chunk in response.iter_content(chunk_size=1024):
-                    if chunk:
-                        f.write(chunk)
-                        pbar.update(len(chunk))
-        print(f"Downloaded {filename} successfully.")
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    f.write(chunk)
+        return True
     else:
-        print(f"Failed to download {filename}.")
+        return False
 
 def search_and_download(names, save_folder, file_type):
+    total_chemicals = len(names)
+    downloaded_count = 0
     error_names = []
-    for name in names:
-        name = name.strip()  # Remove leading/trailing whitespace and newline characters
-        url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{name}/cids/JSON?name_type=word"
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json()
-            if 'IdentifierList' in data:
-                cid = data['IdentifierList']['CID'][0]
-                url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/{cid}/record/{file_type}/"
-                download_file(url, save_folder, f"{cid}.{file_type}")
-            else:
-                error_names.append(name)
-        else:
-            print(f"Failed to search for chemical {name}.")
-            error_names.append(name)
+    start_time = time.time()
+
+    with tqdm(total=total_chemicals, desc="Downloading", unit="chemical") as pbar:
+        with ThreadPoolExecutor() as executor:
+            futures = []
+            for name in names:
+                name = name.strip()  # Remove leading/trailing whitespace and newline characters
+                url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{name}/cids/JSON?name_type=word"
+                future = executor.submit(download_and_track_progress, url, save_folder, file_type, pbar)
+                futures.append(future)
+            
+            for future in futures:
+                result = future.result()
+                if result:
+                    downloaded_count += 1
+                else:
+                    error_names.append(name)
+
     return error_names
+
+def download_and_track_progress(url, save_folder, file_type, pbar):
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        if 'IdentifierList' in data:
+            cid = data['IdentifierList']['CID'][0]
+            url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/{cid}/record/{file_type}/"
+            if download_file(url, save_folder, f"{cid}.{file_type}"):
+                pbar.update(1)
+                return True
+    return False
 
 def process_option(option):
     if option == '1' or option == '2':
