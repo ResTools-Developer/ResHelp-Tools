@@ -1,7 +1,9 @@
 import os
 from bs4 import BeautifulSoup
 import requests
+import time
 import pandas as pd
+from tqdm import tqdm
 
 def print_green(text):
     print("\033[92m {}\033[00m" .format(text))
@@ -25,14 +27,24 @@ def display_intro():
     print("Description: Collection of tools to help researchers in their work")
     print("\n")
 
-def fetch_data(url):
-    # Fetch HTML content from the URL
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.content
-    else:
-        print("Failed to fetch data from URL:", url)
-        return None
+def fetch_data(url, retry_limit=3):
+    retry_count = 0
+    while retry_count < retry_limit:
+        try:
+            # Fetch HTML content from the URL
+            response = requests.get(url)
+            if response.status_code == 200:
+                return response.content
+            else:
+                print("Failed to fetch data from URL:", url)
+                return None
+        except requests.ConnectionError:
+            print("Connection error occurred. Retrying...")
+            retry_count += 1
+            time.sleep(5)  # Wait for a few seconds before retrying
+
+    print(f"Failed to fetch data from URL after {retry_limit} retries:", url)
+    return None
 
 def parse_table(html_content):
     # Parse HTML content and extract tabular data
@@ -112,6 +124,62 @@ def get_output_extension(output_format):
     else:
         return None
 
+def parse_table_phytochem(html_content):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    table = soup.find('table', {'class': 'phytochem'})
+    if table:
+        table_data = []
+        rows = table.find_all('tr')
+        for row in rows[1:]:  # Skip header row
+            cols = row.find_all('td')
+            phytochemical_name = cols[3].text.strip()  # Extract phytochemical name
+            table_data.append(phytochemical_name)
+        return table_data
+    else:
+        print("No table found in the HTML content.")
+        return None
+
+def pull_plant_phytochemicals():
+    input_path = input("Enter the path of the text file containing plant names: ")
+    if not os.path.exists(input_path):
+        print("File not found.")
+        return
+
+    try:
+        # Read the text file containing plant names
+        with open(input_path, 'r') as f:
+            plant_names = f.read().splitlines()
+
+        # Fetch and parse data for each plant
+        all_phytochemicals = set()
+        progress_bar = tqdm(total=len(plant_names), desc="Progress", unit="plant")
+
+        for plant_name in plant_names:
+            url = f"https://cb.imsc.res.in/imppat/phytochemical/{plant_name.replace(' ', '%20')}"
+            html_content = fetch_data(url)
+
+            if html_content:
+                table_data = parse_table_phytochem(html_content)
+                if table_data:
+                    all_phytochemicals.update(table_data)  # Add phytochemical names to set
+
+            progress_bar.update(1)  # Update progress bar
+
+        progress_bar.close()
+
+        # Save the list of phytochemicals into a text file
+        output_path = input("Enter the path where the output file should be saved (e.g., /path/to/save): ")
+        output_filename = input("Enter the name of the output file: ") + ".txt"
+
+        with open(os.path.join(output_path, output_filename), 'w') as f:
+            for phytochemical in all_phytochemicals:
+                f.write(f"{phytochemical}\n")
+
+        print("Data saved to", os.path.join(output_path, output_filename))
+
+    except Exception as e:
+        print("Error:", e)
+
 def go_back():
     return input("Press Enter to go back...")
 
@@ -123,7 +191,9 @@ def main():
         print("Browse")
         print("1. Phytochemical Associations")
         print("2. Therapeutic Use")
-        print("3. Exit")
+        print("3. Pull Plant Phytochemicals")
+        print("4. Return to ResHelp Tools")
+        print("5. Exit")
         browse_option = input("Enter your choice: ")
 
         if browse_option == '1':
@@ -181,6 +251,12 @@ def main():
                 continue
                 
         elif browse_option == '3':
+            pull_plant_phytochemicals()
+
+        elif browse_option == '4':
+            os.system("python3 main.py")
+
+        elif browse_option == '5':
             print("Exiting...")
             break
 

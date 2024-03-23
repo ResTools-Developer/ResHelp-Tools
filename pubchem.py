@@ -1,5 +1,6 @@
 import os
 import requests
+from tqdm import tqdm
 
 def print_green(text):
     print("\033[92m {}\033[00m" .format(text))
@@ -25,10 +26,15 @@ def display_intro():
     print("\n")
 
 def download_file(url, save_folder, filename):
-    response = requests.get(url)
+    response = requests.get(url, stream=True)
     if response.status_code == 200:
         with open(os.path.join(save_folder, filename), 'wb') as f:
-            f.write(response.content)
+            total_length = int(response.headers.get('content-length'))
+            with tqdm(total=total_length, desc=filename, unit='B', unit_scale=True) as pbar:
+                for chunk in response.iter_content(chunk_size=1024):
+                    if chunk:
+                        f.write(chunk)
+                        pbar.update(len(chunk))
         print(f"Downloaded {filename} successfully.")
     else:
         print(f"Failed to download {filename}.")
@@ -54,7 +60,7 @@ def search_and_download(names, save_folder, file_type):
 
 def process_option(option):
     if option == '1' or option == '2':
-        save_folder = input("Enter the path to the folder where you want to save files: ")
+        save_folder = input("Enter the path to the folder where you want to DOWNLOAD files: ")
         file_type = input("Enter the file type you want to download (sdf, json, xml, asnt): ")
         if file_type.lower() not in ['sdf', 'json', 'xml', 'asnt']:
             print("Invalid file type specified.")
@@ -99,7 +105,7 @@ if __name__ == "__main__":
     while option:
         option = process_option(option)
         if option == 'return_to_main':
-            break
+            os.system("python3 main.py")
         elif option == 'exit':
             print("Exiting...")
             exit()

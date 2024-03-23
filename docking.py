@@ -118,7 +118,8 @@ def display_options():
     print("4. Convert .sdf ligands to .pdbqt")
     print("5. Start docking process")
     print("6. Split output files")
-    print("7. Exit")
+    print("7. Return to ResHelp Tools")
+    print("8. Exit")
 
     print("\n")
 
@@ -142,6 +143,8 @@ def ask_for_tool_choice():
             elif choice == 6:
                 split_output_files(wd1)
             elif choice == 7:
+                os.system("python3 main.py")
+            elif choice == 8:
                 print("Exiting...")
                 sys.exit()
             else:
