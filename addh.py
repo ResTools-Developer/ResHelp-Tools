@@ -6,19 +6,21 @@ def print_green(text):
 
 def display_intro():
     print_green("""           
-
-              _     _   _    _           _                            
-     /\      | |   | | | |  | |         | |                           
-    /  \   __| | __| | | |__| |_   _  __| |_ __ ___   __ _  ___ _ __  
-   / /\ \ / _` |/ _` | |  __  | | | |/ _` | '__/ _ \ / _` |/ _ \ '_ \ 
-  / ____ \ (_| | (_| | | |  | | |_| | (_| | | | (_) | (_| |  __/ | | |
- /_/    \_\__,_|\__,_| |_|  |_|\__, |\__,_|_|  \___/ \__, |\___|_| |_|
-                                __/ |                 __/ |           
-                               |___/                 |___/                                                                                                  
-                                                                                       
+  ______         __        __        __    __                  __                                                   
+ /      \       |  \      |  \      |  \  |  \                |  \                                                  
+|  $$$$$$\  ____| $$  ____| $$      | $$  | $$ __    __   ____| $$  ______    ______    ______    ______   _______  
+| $$__| $$ /      $$ /      $$      | $$__| $$|  \  |  \ /      $$ /      \  /      \  /      \  /      \ |       \ 
+| $$    $$|  $$$$$$$|  $$$$$$$      | $$    $$| $$  | $$|  $$$$$$$|  $$$$$$\|  $$$$$$\|  $$$$$$\|  $$$$$$\| $$$$$$$\
+| $$$$$$$$| $$  | $$| $$  | $$      | $$$$$$$$| $$  | $$| $$  | $$| $$   \$$| $$  | $$| $$  | $$| $$    $$| $$  | $$
+| $$  | $$| $$__| $$| $$__| $$      | $$  | $$| $$__/ $$| $$__| $$| $$      | $$__/ $$| $$__| $$| $$$$$$$$| $$  | $$
+| $$  | $$ \$$    $$ \$$    $$      | $$  | $$ \$$    $$ \$$    $$| $$       \$$    $$ \$$    $$ \$$     \| $$  | $$
+ \$$   \$$  \$$$$$$$  \$$$$$$$       \$$   \$$ _\$$$$$$$  \$$$$$$$ \$$        \$$$$$$  _\$$$$$$$  \$$$$$$$ \$$   \$$
+                                              |  \__| $$                              |  \__| $$                    
+                                               \$$    $$                               \$$    $$                    
+                                                \$$$$$$                                 \$$$$$$                                                                                  
 """)
     print("Add Hydrogen Tool")
-    print("Version: 1.00.001")
+    print("Version: 1.05")
     print("Developer: Manav Choudhary")
     print("Description: Adds hydrogen atoms to SDF files and converts them to PDB format.")
     print("\n")
@@ -34,7 +36,7 @@ def add_hydrogen_to_sdf(sdf_folder):
         sdf_path_save = os.path.join(added_hydrogen_folder)
 
         # Launch PyMOL and add hydrogen atoms
-        command = [r"C:\ProgramData\pymol\PyMOLWin.exe", "-cq", "-d", f"load {sdf_path}, molecule; h_add ; save {sdf_path_save}, molecule"]
+        command = [r"C:\ProgramData\pymol\PyMOLWin.exe", "-cq", "-d", f"load {sdf_path}, molecule; h_add; save {sdf_path_save}, molecule"]
         subprocess.run(command)
 
 if __name__ == "__main__":

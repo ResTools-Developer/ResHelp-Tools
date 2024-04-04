@@ -23,7 +23,7 @@ def display_intro():
                                                                                                                                                                                     
     """)
     print("ResHelp Tools")
-    print("Version: 1.00.001")
+    print("Version: 1.05")
     print("Developer: Manav Choudhary")
     print("Description: Collection of tools to help researchers in their work")
     print("\n")
