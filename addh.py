@@ -31,11 +31,10 @@ def add_hydrogen_to_sdf(sdf_folder):
 
     for sdf_file in sdf_files:
         sdf_path = os.path.join(sdf_folder, sdf_file)
-        pdb_file = sdf_file.replace(".sdf", ".pdb")
-        pdb_path = os.path.join(added_hydrogen_folder, pdb_file)
+        sdf_path_save = os.path.join(added_hydrogen_folder)
 
         # Launch PyMOL and add hydrogen atoms
-        command = [r"C:\ProgramData\pymol\PyMOLWin.exe", "-cq", "-d", f"load {sdf_path}, molecule; h_add; save {pdb_path}, molecule"]
+        command = [r"C:\ProgramData\pymol\PyMOLWin.exe", "-cq", "-d", f"load {sdf_path}, molecule; h_add ; save {sdf_path_save}, molecule"]
         subprocess.run(command)
 
 if __name__ == "__main__":

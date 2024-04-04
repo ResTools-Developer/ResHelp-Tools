@@ -44,7 +44,7 @@ def measure_ping_speed():
 def adjust_parameters():
     ping_speed = measure_ping_speed()
     # Adjust max concurrent requests and throttling delay based on ping speed
-    if ping_speed < 50:
+    if ping_speed < 60:
         MAX_CONCURRENT_REQUESTS = 20
         THROTTLING_DELAY = 0.1
     elif ping_speed < 100:
@@ -101,8 +101,8 @@ def search_and_download(names, save_folder, file_type):
     return error_names
 
 @retry(retry=retry_if_exception_type(requests.HTTPError),
-       wait=wait_exponential(multiplier=1, min=1, max=10),
-       stop=stop_after_attempt(5))
+       wait=wait_exponential(multiplier=1, min=1, max=12),
+       stop=stop_after_attempt(30))
 def download_and_track_progress(url, save_folder, file_type, pbar, log_file):
     response = requests.get(url)
     if response.status_code == 200:
