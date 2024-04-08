@@ -1,0 +1,7 @@
+requests
+tqdm
+time
+tenacity
+requests
+pandas
+bs4
