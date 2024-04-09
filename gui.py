@@ -1,21 +1,19 @@
 import os
 import requests
 import time
-from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import quote_plus
-import urllib3
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QTextEdit, QLineEdit, QProgressBar
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QTextEdit, QLineEdit, QProgressBar
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtGui import QIcon, QFont, QPalette, QColor
 import sys 
 
 MAX_RETRIES = 20
 RETRY_DELAY = 3  # Delay between retries in seconds
 MAX_CONCURRENT_REQUESTS = 10 # Maximum number of concurrent requests
 THROTTLING_DELAY = 0.2  # Delay between each concurrent request in seconds
-LOGS_FOLDER = "Logs"
 
 class DownloadThread(QThread):
     progress = pyqtSignal(int)
@@ -31,11 +29,7 @@ class DownloadThread(QThread):
         downloaded_count = 0
         error_names = []
 
-        log_folder = os.path.join(self.save_folder, LOGS_FOLDER)
-        if not os.path.exists(log_folder):
-            os.makedirs(log_folder)
-
-        log_file = os.path.join(log_folder, "download_errors.log")
+        log_file = os.path.join(self.save_folder, "download_errors.log")
         cid_list_file = os.path.join(self.save_folder, "cid_list.txt")
 
         with open(cid_list_file, 'w') as cid_file:
@@ -105,7 +99,8 @@ class MyApp(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('PubChem Structure File Downloader')
+        self.setWindowTitle('PubChem Database')
+        self.setWindowIcon(QIcon('logo.png'))
 
         vbox = QVBoxLayout()
         self.setLayout(vbox)
@@ -120,9 +115,9 @@ class MyApp(QWidget):
         self.textEdit = QTextEdit()
         vbox.addWidget(self.textEdit)
 
-        self.saveFolderInput = QLineEdit()
-        self.saveFolderInput.setPlaceholderText("Enter the path to the folder where you want to DOWNLOAD files")
-        vbox.addWidget(self.saveFolderInput)
+        self.saveFolderBtn = QPushButton('Select Save Folder')
+        self.saveFolderBtn.clicked.connect(self.selectSaveFolder)
+        vbox.addWidget(self.saveFolderBtn)
 
         self.fileTypeInput = QLineEdit()
         self.fileTypeInput.setPlaceholderText("Enter the file type you want to download (sdf, json, xml, asnt)")
@@ -145,9 +140,13 @@ class MyApp(QWidget):
                 data = f.read()
                 self.textEdit.setText(data)
 
+    def selectSaveFolder(self):
+        save_folder = QFileDialog.getExistingDirectory(self)
+        self.saveFolderBtn.setText(save_folder if save_folder else 'Select Save Folder')
+
     def startDownload(self):
         names = self.textEdit.toPlainText().split('\n')
-        save_folder = self.saveFolderInput.text()
+        save_folder = self.saveFolderBtn.text()
         file_type = self.fileTypeInput.text()
         self.downloadThread = DownloadThread(names, save_folder, file_type)
         self.downloadThread.progress.connect(self.progressBar.setValue)
@@ -157,4 +156,4 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = MyApp()
     ex.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
