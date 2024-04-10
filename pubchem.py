@@ -1,4 +1,3 @@
-#HariOm
 import os
 import requests
 import time
@@ -12,6 +11,7 @@ RETRY_DELAY = 3  # Delay between retries in seconds
 MAX_CONCURRENT_REQUESTS = 10 # Maximum number of concurrent requests
 THROTTLING_DELAY = 0.2  # Delay between each concurrent request in seconds
 
+LOGS_FOLDER = "Logs"
 
 def print_green(text):
     print("\033[92m {}\033[00m" .format(text))
@@ -79,31 +79,37 @@ def search_and_download(names, save_folder, file_type):
     error_names = []
     start_time = time.time()
 
-    log_file = os.path.join(save_folder, "download_errors.log")
+    log_folder = os.path.join(save_folder, LOGS_FOLDER)
+    if not os.path.exists(log_folder):
+        os.makedirs(log_folder)
 
-    with tqdm(total=total_chemicals, desc="Downloading", unit="chemical") as pbar:
-        with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_REQUESTS) as executor:
-            futures = []
-            for name in names:
-                name = name.strip()  # Remove leading/trailing whitespace and newline characters
-                url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{name}/cids/JSON?name_type=word"
-                future = executor.submit(download_and_track_progress, url, save_folder, file_type, pbar, log_file)
-                futures.append(future)
-                time.sleep(THROTTLING_DELAY)  # Introduce a delay between each concurrent request
-            
-            for future in futures:
-                result = future.result()
-                if result:
-                    downloaded_count += 1
-                else:
-                    error_names.append(name)
+    log_file = os.path.join(log_folder, "download_errors.log")
+    cid_list_file = os.path.join(save_folder, "cid_list.txt")
+
+    with open(cid_list_file, 'w') as cid_file:
+        with tqdm(total=total_chemicals, desc="Downloading", unit="chemical") as pbar:
+            with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_REQUESTS) as executor:
+                futures = []
+                for name in names:
+                    name = name.strip()  # Remove leading/trailing whitespace and newline characters
+                    url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{name}/cids/JSON?name_type=word"
+                    future = executor.submit(download_and_track_progress, url, save_folder, file_type, pbar, log_file, cid_file)
+                    futures.append(future)
+                    time.sleep(THROTTLING_DELAY)  # Introduce a delay between each concurrent request
+                
+                for future in futures:
+                    result = future.result()
+                    if result:
+                        downloaded_count += 1
+                    else:
+                        error_names.append(name)
 
     return error_names
 
 @retry(retry=retry_if_exception_type(requests.HTTPError),
        wait=wait_exponential(multiplier=1, min=1, max=12),
        stop=stop_after_attempt(30))
-def download_and_track_progress(url, save_folder, file_type, pbar, log_file):
+def download_and_track_progress(url, save_folder, file_type, pbar, log_file, cid_file):
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
@@ -112,6 +118,7 @@ def download_and_track_progress(url, save_folder, file_type, pbar, log_file):
             url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/{cid}/record/{file_type}/?record_type=3d"
             if download_file(url, save_folder, f"{cid}.{file_type}", log_file):
                 pbar.update(1)
+                cid_file.write(f"{cid}\n")  # Write CID to cid_list.txt
                 return True
     elif response.status_code == 503:
         for i in range(MAX_RETRIES, 0, -1):
