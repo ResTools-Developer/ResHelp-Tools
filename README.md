@@ -1,6 +1,6 @@
 # ResHelp Tools
 
-![Logo](logo.png)
+![Logo](root/logo.png)
 
 ResHelp Tools is a comprehensive toolkit designed to assist researchers in various tasks related to chemical data processing, docking simulations, and more. With a user-friendly interface and powerful functionalities, ResHelp Tools streamlines the workflow of researchers, making their work more efficient and productive.
 
@@ -32,19 +32,19 @@ To install ResHelp Tools on your system, follow these steps:
     ```bash
     pip install -r requirements.txt
     ```
-  ***If Python and pip is not installed***
+    If Python and pip are not installed on your system, you can install them by following these steps:
 
     ```bash
     sudo apt-get update
-    ```
-    ```bash
     sudo apt-get install python3 python3-pip
     ```
 
-   Ensure that you have Python installed on your system before proceeding with the installation.
+    Ensure that you have Python installed on your system before proceeding with the installation.
 
 4. **Update:** To get latest changes and updates to the program
-  cd to the Repository folder in your system
+
+    cd to the Repository folder in your system
+
     ```bash
     git pull
     ```
