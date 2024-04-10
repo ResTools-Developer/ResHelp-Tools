@@ -58,7 +58,7 @@ Follow these steps to use ResHelp Tools effectively:
    Execute the `main.py` file to access the main menu of ResHelp Tools:
 
    ```bash
-   python main.py
+   python3 main.py
    ```
 
 2. **Interact with the Tools:**
@@ -110,3 +110,5 @@ limitations under the License.
 ## Acknowledgements
 
 - **Developer:** Manav Choudhary
+
+## HariOm
