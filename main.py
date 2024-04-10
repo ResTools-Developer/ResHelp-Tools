@@ -40,7 +40,7 @@ def ask_for_tool_choice():
         if choice.isdigit():
             choice = int(choice)
             if choice == 1:
-                os.system("python3 pubchem.py")
+                os.system("python3 gui.py")
                 break
             elif choice == 2:
                 os.system("python3 IMPPAT.py")

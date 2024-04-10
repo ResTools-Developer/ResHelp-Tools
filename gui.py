@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import quote_plus
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QTextEdit, QLineEdit, QProgressBar
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QTextEdit, QLineEdit, QProgressBar, QMessageBox, QComboBox
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QIcon, QFont, QPalette, QColor
 import sys 
@@ -17,6 +17,7 @@ THROTTLING_DELAY = 0.2  # Delay between each concurrent request in seconds
 
 class DownloadThread(QThread):
     progress = pyqtSignal(int)
+    finished = pyqtSignal(int, int)  # Signal to indicate download finished with success and error counts
 
     def __init__(self, names, save_folder, file_type):
         super().__init__()
@@ -24,10 +25,14 @@ class DownloadThread(QThread):
         self.save_folder = save_folder
         self.file_type = file_type
 
+    def update_progress(self, value):
+        # Emit the progress signal via QMetaObject.invokeMethod to ensure it's handled in the main thread
+        QMetaObject.invokeMethod(self.progress, "emit", Qt.ConnectionType.QueuedConnection, value)
+
     def run(self):
         total_chemicals = len(self.names)
         downloaded_count = 0
-        error_names = []
+        error_count = 0
 
         log_file = os.path.join(self.save_folder, "download_errors.log")
         cid_list_file = os.path.join(self.save_folder, "cid_list.txt")
@@ -46,9 +51,11 @@ class DownloadThread(QThread):
                     result = future.result()
                     if result:
                         downloaded_count += 1
-                        self.progress.emit(int(downloaded_count / total_chemicals * 100))
                     else:
-                        error_names.append(name)
+                        error_count += 1
+                    self.update_progress(int((downloaded_count + error_count) / total_chemicals * 100))
+            
+        self.finished.emit(downloaded_count, error_count)
 
     def download_and_track_progress(self, url, save_folder, file_type, log_file, cid_file):
         session = requests.Session()
@@ -119,8 +126,8 @@ class MyApp(QWidget):
         self.saveFolderBtn.clicked.connect(self.selectSaveFolder)
         vbox.addWidget(self.saveFolderBtn)
 
-        self.fileTypeInput = QLineEdit()
-        self.fileTypeInput.setPlaceholderText("Enter the file type you want to download (sdf, json, xml, asnt)")
+        self.fileTypeInput = QComboBox()
+        self.fileTypeInput.addItems(["sdf", "json", "xml", "asnt"])
         vbox.addWidget(self.fileTypeInput)
 
         self.downloadBtn = QPushButton('Start Download')
@@ -131,6 +138,11 @@ class MyApp(QWidget):
         vbox.addWidget(self.progressBar)
 
         self.setGeometry(300, 300, 300, 200)
+
+        self.retryBtn = QPushButton('Retry Failed Downloads')
+        self.retryBtn.clicked.connect(self.retryFailedDownloads)
+        self.retryBtn.setEnabled(False)  # Disable the button initially
+        vbox.addWidget(self.retryBtn)
 
     def selectFile(self):
         fname = QFileDialog.getOpenFileName(self)
@@ -147,10 +159,27 @@ class MyApp(QWidget):
     def startDownload(self):
         names = self.textEdit.toPlainText().split('\n')
         save_folder = self.saveFolderBtn.text()
-        file_type = self.fileTypeInput.text()
+        file_type = self.fileTypeInput.currentText()
         self.downloadThread = DownloadThread(names, save_folder, file_type)
         self.downloadThread.progress.connect(self.progressBar.setValue)
+        self.downloadThread.finished.connect(self.downloadFinished)
         self.downloadThread.start()
+        self.downloadBtn.setText("Downloading...")
+
+    def downloadFinished(self, success_count, error_count):
+        self.downloadBtn.setText("Start Download")
+        QMessageBox.information(self, "Download Finished", f"Download finished with {success_count} successful downloads and {error_count} errors.")
+        self.retryBtn.setEnabled(True)  # Enable the retry button after download finished
+
+    def retryFailedDownloads(self):
+        log_file = os.path.join(self.saveFolderBtn.text(), "download_errors.log")
+        with open(log_file, 'r') as f:
+            lines = f.readlines()
+        failed_chemicals = [line.split(':')[1].strip() for line in lines if '503' in line]
+        self.textEdit.setText('\n'.join(failed_chemicals))
+        QMessageBox.question(self, "Retry Failed Downloads", "Do you want to retry downloading for these chemicals?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if QMessageBox.StandardButton.Yes:
+            self.startDownload()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
