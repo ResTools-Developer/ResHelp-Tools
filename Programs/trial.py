@@ -1,3 +1,20 @@
+#HariOm
+"""
+Copyright 2024 Manav Amit Choudhary
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import os
 import requests
 import time
@@ -8,7 +25,9 @@ from requests.packages.urllib3.util.retry import Retry
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QTextEdit, QLineEdit, QProgressBar, QMessageBox, QComboBox
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QIcon, QFont, QPalette, QColor
-import sys 
+from PyQt6.QtQml import QQmlApplicationEngine, QQmlComponent
+from PyQt6.QtQuick import QQuickView
+import sys  
 
 MAX_RETRIES = 20
 RETRY_DELAY = 3  # Delay between retries in seconds
@@ -18,6 +37,7 @@ THROTTLING_DELAY = 0.2  # Delay between each concurrent request in seconds
 class DownloadThread(QThread):
     progress = pyqtSignal(int)
     finished = pyqtSignal(int, int)  # Signal to indicate download finished with success and error counts
+    status = pyqtSignal(str)  # Signal to indicate status updates
 
     def __init__(self, names, save_folder, file_type):
         super().__init__()
@@ -28,6 +48,10 @@ class DownloadThread(QThread):
     def update_progress(self, value):
         # Emit the progress signal via QMetaObject.invokeMethod to ensure it's handled in the main thread
         QMetaObject.invokeMethod(self.progress, "emit", Qt.ConnectionType.QueuedConnection, value)
+
+    def update_status(self, message):
+        # Emit the status signal via QMetaObject.invokeMethod to ensure it's handled in the main thread
+        QMetaObject.invokeMethod(self.status, "emit", Qt.ConnectionType.QueuedConnection, message)
 
     def run(self):
         total_chemicals = len(self.names)
@@ -100,10 +124,32 @@ class DownloadThread(QThread):
         with open(log_file, 'a') as f:
             f.write(error_msg + '\n')
 
+class GuiHandler(QObject):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+
+    @pyqtSlot()
+    def selectFile(self):
+        self.app.selectFile()
+
+    @pyqtSlot()
+    def selectSaveFolder(self):
+        self.app.selectSaveFolder()
+
+    @pyqtSlot()
+    def startDownload(self):
+        self.app.startDownload()
+
+    @pyqtSlot()
+    def retryFailedDownloads(self):
+        self.app.retryFailedDownloads()
+
 class MyApp(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
+        self.guiHandler = GuiHandler(self)
 
     def initUI(self):
         self.setWindowTitle('PubChem Database')
@@ -135,14 +181,19 @@ class MyApp(QWidget):
         vbox.addWidget(self.downloadBtn)
 
         self.progressBar = QProgressBar(self)
+        self.progressBar.setVisible(False)  # Hide the progress bar initially
         vbox.addWidget(self.progressBar)
 
         self.setGeometry(300, 300, 300, 200)
 
         self.retryBtn = QPushButton('Retry Failed Downloads')
         self.retryBtn.clicked.connect(self.retryFailedDownloads)
-        self.retryBtn.setEnabled(False)  # Disable the button initially
+        self.retryBtn.setEnabled(False)  
         vbox.addWidget(self.retryBtn)
+
+        self.engine = QQmlApplicationEngine()
+        self.engine.rootContext().setContextProperty("guiHandler", self.guiHandler)
+        self.engine.load(QUrl.fromLocalFile('layout.qml'))
 
     def selectFile(self):
         fname = QFileDialog.getOpenFileName(self)
@@ -163,23 +214,30 @@ class MyApp(QWidget):
         self.downloadThread = DownloadThread(names, save_folder, file_type)
         self.downloadThread.progress.connect(self.progressBar.setValue)
         self.downloadThread.finished.connect(self.downloadFinished)
+        self.downloadThread.status.connect(self.updateStatus)
         self.downloadThread.start()
         self.downloadBtn.setText("Downloading...")
+        self.progressBar.setVisible(True)  # Show the progress bar when download starts
 
     def downloadFinished(self, success_count, error_count):
         self.downloadBtn.setText("Start Download")
         QMessageBox.information(self, "Download Finished", f"Download finished with {success_count} successful downloads and {error_count} errors.")
         self.retryBtn.setEnabled(True)  # Enable the retry button after download finished
+        self.progressBar.setVisible(False)  # Hide the progress bar when download finishes
 
     def retryFailedDownloads(self):
-        log_file = os.path.join(self.saveFolderBtn.text(), "download_errors.log")
-        with open(log_file, 'r') as f:
-            lines = f.readlines()
-        failed_chemicals = [line.split(':')[1].strip() for line in lines if '503' in line]
-        self.textEdit.setText('\n'.join(failed_chemicals))
-        QMessageBox.question(self, "Retry Failed Downloads", "Do you want to retry downloading for these chemicals?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        if QMessageBox.StandardButton.Yes:
-            self.startDownload()
+        log_file = QFileDialog.getOpenFileName(self, "Select Log File", "", "Log Files (*.log)")
+        if log_file[0]:
+            with open(log_file[0], 'r') as f:
+                lines = f.readlines()
+            failed_chemicals = [line.split(':')[1].strip() for line in lines if '503' in line]
+            self.textEdit.setText('\n'.join(failed_chemicals))
+            reply = QMessageBox.question(self, "Retry Failed Downloads", "Do you want to retry downloading for these chemicals?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            if reply == QMessageBox.StandardButton.Yes:
+                self.startDownload()
+
+    def updateStatus(self, message):
+        QMessageBox.information(self, "Status Update", message)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

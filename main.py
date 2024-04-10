@@ -1,4 +1,20 @@
 #HariOm
+"""
+Copyright 2024 Manav Amit Choudhary
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import os
 import sys
 
@@ -40,16 +56,16 @@ def ask_for_tool_choice():
         if choice.isdigit():
             choice = int(choice)
             if choice == 1:
-                os.system("python3 gui.py")
+                os.system("python3 Programs/gui.py")
                 break
             elif choice == 2:
-                os.system("python3 IMPPAT.py")
+                os.system("python3 Programs/IMPPAT.py")
                 break
             elif choice == 3:
-                os.system("python3 addh.py")
+                os.system("python3 Programs/addh.py")
                 break
             elif choice == 4:
-                os.system("python3 docking.py")
+                os.system("python3 Programs/docking.py")
                 break
             elif choice == 5:
                 print("Exiting...")
