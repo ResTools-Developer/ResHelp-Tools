@@ -37,6 +37,7 @@ To install ResHelp Tools on your system, follow these steps:
     ```bash
     sudo apt-get update
     sudo apt-get install python3 python3-pip
+    sudo apt-get install pyqt6
     ```
 
     Ensure that you have Python installed on your system before proceeding with the installation.
