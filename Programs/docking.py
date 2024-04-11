@@ -119,7 +119,7 @@ def split_output_files(directory):
         os.makedirs("Input", exist_ok=True)
         os.makedirs("PDBQT", exist_ok=True)
         subprocess.run(["mv *_ligand_01.pdbqt 01_Docking_Pose"], shell=True)
-        subprocess.run(["mv *_ligand_[0-9][0-9].pdbqt Other_Docking_Pose"], shell=True)
+        subprocess.run(["mv *_ligand_02.pdbqt Other_Docking_Pose && mv *_ligand_03.pdbqt Other_Docking_Pose && mv *_ligand_04.pdbqt Other_Docking_Pose && mv *_ligand_05.pdbqt Other_Docking_Pose && mv *_ligand_06.pdbqt Other_Docking_Pose && mv *_ligand_07.pdbqt Other_Docking_Pose && mv *_ligand_08.pdbqt Other_Docking_Pose && mv *_ligand_09.pdbqt Other_Docking_Pose && mv *_ligand_10.pdbqt Other_Docking_Pose"], shell=True)
         subprocess.run(["mv *.sdf Input && mv protein.pdbqt Input"], shell=True)
         subprocess.run(["mv 01_Docking_Pose Output"], shell=True)
         subprocess.run(["mv Other_Docking_Pose Output"], shell=True)
@@ -135,8 +135,7 @@ def display_options():
     print("4. Convert .sdf ligands to .pdbqt")
     print("5. Start docking process")
     print("6. Split output files")
-    print("7. Return to ResHelp Tools")
-    print("8. Exit")
+    print("7. Exit")
 
     print("\n")
 
@@ -160,8 +159,6 @@ def ask_for_tool_choice():
             elif choice == 6:
                 split_output_files(wd1)
             elif choice == 7:
-                os.system("python3 ../main.py")
-            elif choice == 8:
                 print("Exiting...")
                 sys.exit()
             else:

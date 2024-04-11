@@ -47,7 +47,8 @@ def display_options():
     print("2. IMPPAT Databse")
     print("3. Add Hydrogen Tool")
     print("4. Docking Tools")
-    print("5. Exit")
+    print("5. Log File Analyser Tool")
+    print("6. Exit")
     print("\n")
 
 def ask_for_tool_choice():
@@ -68,6 +69,9 @@ def ask_for_tool_choice():
                 os.system("python3 Programs/docking.py")
                 break
             elif choice == 5:
+                os.system("python3 Programs/dataan.py")
+                break
+            elif choice == 6:
                 print("Exiting...")
                 sys.exit()
             else:

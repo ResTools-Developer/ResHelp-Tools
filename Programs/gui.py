@@ -1,3 +1,20 @@
+#HariOm
+"""
+Copyright 2024 Manav Amit Choudhary
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import os
 import requests
 import time
@@ -6,7 +23,7 @@ from urllib.parse import quote_plus
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QTextEdit, QLineEdit, QProgressBar, QMessageBox, QComboBox
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QMetaObject 
 from PyQt6.QtGui import QIcon, QFont, QPalette, QColor
 import sys 
 
@@ -27,7 +44,7 @@ class DownloadThread(QThread):
 
     def update_progress(self, value):
         # Emit the progress signal via QMetaObject.invokeMethod to ensure it's handled in the main thread
-        QMetaObject.invokeMethod(self.progress, "emit", Qt.ConnectionType.QueuedConnection, value)
+        self.progress.emit(value)
 
     def run(self):
         total_chemicals = len(self.names)
@@ -141,7 +158,6 @@ class MyApp(QWidget):
 
         self.retryBtn = QPushButton('Retry Failed Downloads')
         self.retryBtn.clicked.connect(self.retryFailedDownloads)
-        self.retryBtn.setEnabled(False)  
         vbox.addWidget(self.retryBtn)
 
     def selectFile(self):
@@ -176,11 +192,10 @@ class MyApp(QWidget):
         if log_file[0]:
             with open(log_file[0], 'r') as f:
                 lines = f.readlines()
-            failed_chemicals = [line.split(':')[1].strip() for line in lines if '503' in line]
-            self.textEdit.setText('\n'.join(failed_chemicals))
-            reply = QMessageBox.question(self, "Retry Failed Downloads", "Do you want to retry downloading for these chemicals?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-            if reply == QMessageBox.StandardButton.Yes:
-                self.startDownload()
+        failed_chemicals = [line.split(' ')[3].split('.')[0] for line in lines if '503' in line]
+        self.textEdit.setText('\n'.join(failed_chemicals))
+        self.startDownload()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
