@@ -36,11 +36,12 @@ class DownloadThread(QThread):
     progress = pyqtSignal(int)
     finished = pyqtSignal(int, int)  # Signal to indicate download finished with success and error counts
 
-    def __init__(self, names, save_folder, file_type):
+    def __init__(self, names, save_folder, file_type, is_retry):
         super().__init__()
         self.names = names
         self.save_folder = save_folder
         self.file_type = file_type
+        self.is_retry = is_retry
 
     def update_progress(self, value):
         # Emit the progress signal via QMetaObject.invokeMethod to ensure it's handled in the main thread
@@ -59,8 +60,12 @@ class DownloadThread(QThread):
                 futures = []
                 for name in self.names:
                     name = name.strip()  # Remove leading/trailing whitespace and newline characters
-                    url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{quote_plus(name)}/cids/JSON?name_type=word"
-                    future = executor.submit(self.download_and_track_progress, url, self.save_folder, self.file_type, log_file, cid_file)
+                    if self.is_retry:
+                        url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/{name}/record/{self.file_type}/?record_type=3d"
+                        future = executor.submit(self.download_file, url, self.save_folder, f"{name}.{self.file_type}", log_file)
+                    else:
+                        url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{quote_plus(name)}/cids/JSON?name_type=word"
+                        future = executor.submit(self.download_and_track_progress, url, self.save_folder, self.file_type, log_file, cid_file)
                     futures.append(future)
                     time.sleep(THROTTLING_DELAY)  # Introduce a delay between each concurrent request
                 
@@ -176,7 +181,7 @@ class MyApp(QWidget):
         names = self.textEdit.toPlainText().split('\n')
         save_folder = self.saveFolderBtn.text()
         file_type = self.fileTypeInput.currentText()
-        self.downloadThread = DownloadThread(names, save_folder, file_type)
+        self.downloadThread = DownloadThread(names, save_folder, file_type, self.retryBtn.isEnabled())
         self.downloadThread.progress.connect(self.progressBar.setValue)
         self.downloadThread.finished.connect(self.downloadFinished)
         self.downloadThread.start()
