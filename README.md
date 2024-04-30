@@ -18,7 +18,7 @@ To install ResHelp Tools on your system, follow these steps:
 1. **Clone the Repository:** Begin by cloning the ResHelp Tools repository to your local machine:
 
     ```bash
-    git clone https://github.com/manavc-13/ResHelp-Tools.git](https://github.com/ResTools-Developer/ResHelp-Tools.git
+    git clone https://github.com/ResTools-Developer/ResHelp-Tools.git
     ```
 
 2. **Navigate to the Directory:** Move into the cloned directory:
