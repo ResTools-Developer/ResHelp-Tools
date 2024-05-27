@@ -30,17 +30,9 @@ To install ResHelp Tools on your system, follow these steps:
 3. **Install Dependencies:** Install the required Python dependencies by running:
 
     ```bash
-    pip install -r requirements.txt
+    sudo ./setup.sh
     ```
-    If Python and pip are not installed on your system, you can install them by following these steps:
-
-    ```bash
-    sudo apt-get update
-    sudo apt-get install python3 python3-pip
-    sudo apt-get install pyqt6
-    ```
-
-    Ensure that you have Python installed on your system before proceeding with the installation.
+    This is a required step. Without this, the programs wont work.
 
 4. **Update:** To get latest changes and updates to the program
 
