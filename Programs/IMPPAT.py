@@ -271,7 +271,7 @@ def main():
             pull_plant_phytochemicals()
 
         elif browse_option == '4':
-            os.system("python3 ../main.py")
+            os.system("python3 main.py")
 
         elif browse_option == '5':
             print("Exiting...")
