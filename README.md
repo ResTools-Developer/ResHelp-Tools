@@ -80,7 +80,7 @@ In the README file, you should include a section that explains the licensing ter
 
 ## License
 
-This software is distributed under the Apache License, Version 2.0. See the [LICENSE](root/LICENSE) file for details.
+This software is distributed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for details.
 
 ### Apache License, Version 2.0
 
