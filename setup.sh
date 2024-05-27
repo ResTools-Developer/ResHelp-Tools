@@ -16,6 +16,8 @@ echo "Installing Python & PIP..."
 apt-get install -y python3 python3-pip
 
 echo "Installing required packages"
+apt install openbabel
+apt install autodock-vina
 apt install -y libgl1
 apt-get install -y ffmpeg libsm6 libxext6
 apt-get install -y libglib2.0-0
