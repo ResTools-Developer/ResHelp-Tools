@@ -1,7 +1,7 @@
+pandas
 requests
-concurrent
 urllib3
 PyQt6
+PyQt5
 tqdm
 beautifulsoup4
-pandas
