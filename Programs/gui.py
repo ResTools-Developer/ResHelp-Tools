@@ -22,7 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import quote_plus
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QTextEdit, QLineEdit, QProgressBar, QMessageBox, QComboBox
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QTextEdit, QLineEdit, QProgressBar, QMessageBox, QComboBox, QHBoxLayout
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QMetaObject 
 from PyQt6.QtGui import QIcon, QFont, QPalette, QColor
 import sys 
@@ -85,7 +85,7 @@ class DownloadThread(QThread):
             total=MAX_RETRIES,
             backoff_factor=RETRY_DELAY,
             status_forcelist=[429, 500, 502, 503, 504],
-            method_whitelist=["HEAD", "GET", "OPTIONS"]
+            allowed_methods=["HEAD", "GET", "OPTIONS"]
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         session.mount("https://", adapter)
@@ -96,17 +96,27 @@ class DownloadThread(QThread):
             data = response.json()
             if 'IdentifierList' in data:
                 cid = data['IdentifierList']['CID'][0]
-                url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/{cid}/record/{file_type}/?record_type=3d"
-                if self.download_file(url, save_folder, f"{cid}.{file_type}", log_file):
-                    cid_file.write(f"{cid}\n")  # Write CID to cid_list.txt
-                    return True
+                cid_file.write(f"{cid}\n")  # Write CID to cid_list.txt
+                file_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/{cid}/record/{file_type}/?record_type=3d"
+                return self.download_file(file_url, save_folder, f"{cid}.{file_type}", log_file)
         else:
             error_msg = f"Failed to download {file_type} file for {url}: {response.status_code} - {response.reason}"
             self.log_error(error_msg, log_file)
         return False
 
     def download_file(self, url, save_folder, filename, log_file):
-        response = requests.get(url, stream=True)
+        session = requests.Session()
+        retry_strategy = Retry(
+            total=MAX_RETRIES,
+            backoff_factor=RETRY_DELAY,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["HEAD", "GET", "OPTIONS"]
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+
+        response = session.get(url, stream=True)
         if response.status_code == 200:
             with open(os.path.join(save_folder, filename), 'wb') as f:
                 for chunk in response.iter_content(chunk_size=1024):
@@ -129,81 +139,188 @@ class MyApp(QWidget):
 
     def initUI(self):
         self.setWindowTitle('PubChem Database')
-        self.setWindowIcon(QIcon('logo.png'))
+        icon_path = os.path.join(os.path.dirname(__file__), '../root/logo.png')
+        self.setWindowIcon(QIcon(icon_path))  # Set icon path accordingly
+        self.setMinimumSize(600, 400)  # Set minimum window size
 
-        vbox = QVBoxLayout()
-        self.setLayout(vbox)
+        # Apply dark theme
+        self.applyDarkTheme()
 
-        self.btn = QPushButton('Select File')
-        self.btn.clicked.connect(self.selectFile)
-        vbox.addWidget(self.btn)
+        vbox = QVBoxLayout(self)
+
+        # Title label with larger font
+        title_font = QFont("Arial", 18)
+        title_label = QLabel('PubChem Database')
+        title_label.setFont(title_font)
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        vbox.addWidget(title_label)
+
+        # Horizontal layout for file selection buttons
+        button_layout = QHBoxLayout()
+
+        self.btn_select_file = QPushButton('Select File')
+        self.btn_select_file.clicked.connect(self.selectFile)
+        self.styleButton(self.btn_select_file)
+        button_layout.addWidget(self.btn_select_file)
+
+        self.btn_select_save_folder = QPushButton('Select Save Folder')
+        self.btn_select_save_folder.clicked.connect(self.selectSaveFolder)
+        self.styleButton(self.btn_select_save_folder)
+        button_layout.addWidget(self.btn_select_save_folder)
+
+        vbox.addLayout(button_layout)
 
         self.label = QLabel()
+        self.label.setStyleSheet("color: white;")
         vbox.addWidget(self.label)
 
         self.textEdit = QTextEdit()
+        self.textEdit.setPlaceholderText("Enter chemical names or CID numbers, one per line...")
+        self.textEdit.setStyleSheet("""
+            QTextEdit {
+                background-color: #2b2b2b;
+                color: white;
+                border: 1px solid #555;
+                border-radius: 5px;
+                padding: 10px;
+            }
+            QTextEdit::placeholder {
+                color: white;
+            }
+        """)
         vbox.addWidget(self.textEdit)
-
-        self.saveFolderBtn = QPushButton('Select Save Folder')
-        self.saveFolderBtn.clicked.connect(self.selectSaveFolder)
-        vbox.addWidget(self.saveFolderBtn)
 
         self.fileTypeInput = QComboBox()
         self.fileTypeInput.addItems(["sdf", "json", "xml", "asnt"])
+        self.styleComboBox(self.fileTypeInput)
         vbox.addWidget(self.fileTypeInput)
 
         self.downloadBtn = QPushButton('Start Download')
         self.downloadBtn.clicked.connect(self.startDownload)
+        self.styleButton(self.downloadBtn)
         vbox.addWidget(self.downloadBtn)
 
         self.progressBar = QProgressBar(self)
+        self.progressBar.setStyleSheet("""
+            QProgressBar {
+                border: 2px solid grey;
+                border-radius: 5px;
+                text-align: center;
+            }
+            QProgressBar::chunk {
+                background-color: #05B8CC;
+                width: 20px;
+            }
+        """)
         vbox.addWidget(self.progressBar)
-
-        self.setGeometry(300, 300, 300, 200)
 
         self.retryBtn = QPushButton('Retry Failed Downloads')
         self.retryBtn.clicked.connect(self.retryFailedDownloads)
+        self.styleButton(self.retryBtn)
         vbox.addWidget(self.retryBtn)
 
+        self.retryBtn.setEnabled(False)  # Disable retry button initially
+
+    def applyDarkTheme(self):
+        dark_palette = QPalette()
+        dark_palette.setColor(QPalette.ColorRole.Window, QColor(53, 53, 53))
+        dark_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+        dark_palette.setColor(QPalette.ColorRole.Base, QColor(25, 25, 25))
+        dark_palette.setColor(QPalette.ColorRole.AlternateBase, QColor(53, 53, 53))
+        dark_palette.setColor(QPalette.ColorRole.ToolTipBase, Qt.GlobalColor.white)
+        dark_palette.setColor(QPalette.ColorRole.ToolTipText, Qt.GlobalColor.white)
+        dark_palette.setColor(QPalette.ColorRole.Text, Qt.GlobalColor.white)
+        dark_palette.setColor(QPalette.ColorRole.Button, QColor(53, 53, 53))
+        dark_palette.setColor(QPalette.ColorRole.ButtonText, Qt.GlobalColor.white)
+        dark_palette.setColor(QPalette.ColorRole.BrightText, Qt.GlobalColor.red)
+        dark_palette.setColor(QPalette.ColorRole.Link, QColor(42, 130, 218))
+        dark_palette.setColor(QPalette.ColorRole.Highlight, QColor(42, 130, 218))
+        dark_palette.setColor(QPalette.ColorRole.HighlightedText, Qt.GlobalColor.black)
+        self.setPalette(dark_palette)
+
+        font = QFont("Arial", 12)
+        self.setFont(font)
+
+    def styleButton(self, button):
+        button.setStyleSheet("""
+            QPushButton {
+                background-color: #353535;
+                color: white;
+                border: 2px solid #05B8CC;
+                padding: 10px;
+                border-radius: 20px;
+                font-size: 14px;
+                min-width: 150px;
+            }
+            QPushButton:hover {
+                background-color: #454545;
+            }
+        """)
+
+    def styleComboBox(self, combo_box):
+        combo_box.setStyleSheet("""
+            QComboBox {
+                background-color: #3E3E3E;
+                color: white;
+                border: 1px solid gray;
+                padding: 5px;
+                border-radius: 10px;
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+        """)
+
     def selectFile(self):
-        fname = QFileDialog.getOpenFileName(self)
-        if fname[0]:
-            self.label.setText(fname[0])
-            with open(fname[0], 'r') as f:
+        fname, _ = QFileDialog.getOpenFileName(self, "Select File", "", "Text Files (*.txt);;All Files (*)")
+        if fname:
+            self.label.setText(f"Selected file: {fname}")
+            with open(fname, 'r') as f:
                 data = f.read()
                 self.textEdit.setText(data)
 
     def selectSaveFolder(self):
-        save_folder = QFileDialog.getExistingDirectory(self)
-        self.saveFolderBtn.setText(save_folder if save_folder else 'Select Save Folder')
+        save_folder = QFileDialog.getExistingDirectory(self, "Select Save Folder")
+        if save_folder:
+            self.btn_select_save_folder.setText(f"Save Folder: {save_folder}")
+        else:
+            self.btn_select_save_folder.setText('Select Save Folder')
 
     def startDownload(self):
         names = self.textEdit.toPlainText().split('\n')
-        save_folder = self.saveFolderBtn.text()
+        save_folder = self.btn_select_save_folder.text().replace('Save Folder: ', '')
         file_type = self.fileTypeInput.currentText()
         self.downloadThread = DownloadThread(names, save_folder, file_type, self.retryBtn.isEnabled())
         self.downloadThread.progress.connect(self.progressBar.setValue)
         self.downloadThread.finished.connect(self.downloadFinished)
         self.downloadThread.start()
         self.downloadBtn.setText("Downloading...")
+        self.downloadBtn.setEnabled(False)
 
     def downloadFinished(self, success_count, error_count):
         self.downloadBtn.setText("Start Download")
+        self.downloadBtn.setEnabled(True)
         QMessageBox.information(self, "Download Finished", f"Download finished with {success_count} successful downloads and {error_count} errors.")
-        self.retryBtn.setEnabled(True)  # Enable the retry button after download finished
+        if error_count > 0:
+            self.retryBtn.setEnabled(True)
 
     def retryFailedDownloads(self):
         log_file = QFileDialog.getOpenFileName(self, "Select Log File", "", "Log Files (*.log)")
         if log_file[0]:
             with open(log_file[0], 'r') as f:
                 lines = f.readlines()
-        failed_chemicals = [line.split(' ')[3].split('.')[0] for line in lines if '503' in line]
-        self.textEdit.setText('\n'.join(failed_chemicals))
-        self.startDownload()
+            failed_chemicals = [line.split(' ')[3].split('.')[0] for line in lines if '503' in line]
+            self.textEdit.setText('\n'.join(failed_chemicals))
+            self.startDownload()
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+
+    # Set application icon
+    icon_path = os.path.join(os.path.dirname(__file__), '../root/logo.png')
+    app.setWindowIcon(QIcon(icon_path))
+
     ex = MyApp()
     ex.show()
     sys.exit(app.exec())
